@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillConnect - Find Skilled Professionals Near You</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <h1><i class="fas fa-handshake"></i> SkillConnect</h1>
+            </div>
+            <nav class="nav">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#search" class="nav-link">Search</a>
+                <a href="#categories" class="nav-link">Categories</a>
+                <a href="#" class="nav-link" id="messagesLink">Messages</a>
+                <button class="btn btn-primary" id="loginBtn">Login</button>
+                <button class="btn btn-outline" id="signupBtn">Sign Up</button>
+                <div class="user-menu" id="userMenu" style="display: none;">
+                    <img src="" alt="" class="user-avatar" id="userAvatar">
+                    <span id="userName"></span>
+                    <button class="btn btn-sm" id="logoutBtn">Logout</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <h2>Find Skilled Professionals Near You</h2>
+            <p>Connect with trusted photographers, designers, painters, developers, and more</p>
+            
+            <div class="search-box">
+                <div class="search-input-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search for photographer, painter, lawyer...">
+                </div>
+                <div class="location-input-group">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" id="locationInput" placeholder="Enter city or location">
+                    <button class="btn-icon" id="useCurrentLocation" title="Use current location">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                </div>
+                <button class="btn btn-primary btn-large" id="searchBtn">Search</button>
+            </div>
+            
+            <div class="toggle-view">
+                <button class="btn-toggle active" id="mapViewBtn">
+                    <i class="fas fa-map"></i> Map
+                </button>
+                <button class="btn-toggle" id="listViewBtn">
+                    <i class="fas fa-list"></i> List
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories" id="categories">
+        <div class="container">
+            <h2>Popular Categories</h2>
+            <div class="categories-grid" id="categoriesGrid">
+                <!-- Categories will be loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Map View -->
+    <section class="map-section" id="mapSection" style="display: none;">
+        <div class="container-full">
+            <div id="map" style="height: 600px; width: 100%;"></div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results" id="resultsSection" style="display: none;">
+        <div class="container">
+            <div class="results-header">
+                <h2 id="resultsTitle">Search Results</h2>
+                <div class="filters">
+                    <select id="ratingFilter">
+                        <option value="0">All Ratings</option>
+                        <option value="4">4+ Stars</option>
+                        <option value="4.5">4.5+ Stars</option>
+                    </select>
+                    <select id="sortFilter">
+                        <option value="rating">Highest Rated</option>
+                        <option value="distance">Nearest</option>
+                        <option value="reviews">Most Reviewed</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="professionals-grid" id="professionalsGrid">
+                <!-- Results will be loaded dynamically -->
+            </div>
+            
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </section>
+
+    <!-- Professional Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content modal-large">
+            <span class="close">&times;</span>
+            <div id="profileContent">
+                <!-- Profile content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Login to SkillConnect</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+            <p class="text-center">Don't have an account? <a href="#" id="showSignupModal">Sign up</a></p>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create Account</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>I am a:</label>
+                    <select name="user_type" required>
+                        <option value="customer">Customer</option>
+                        <option value="professional">Professional</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+            </form>
+            <p class="text-center">Already have an account? <a href="#" id="showLoginModal">Login</a></p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 SkillConnect. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
