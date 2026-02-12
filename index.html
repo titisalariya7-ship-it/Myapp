@@ -1,189 +1,242 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkillConnect - Find Skilled Professionals Near You</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SkillConnect Final</title>
+
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #f9fafb; margin: 0; }
+        .screen { display: none; height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; overflow-y: auto; }
+        .screen.active { display: block; }
+        #map { height: calc(100vh - 145px); width: 100%; z-index: 1; }
+        .custom-marker { width: 45px; height: 45px; border-radius: 50%; border: 3px solid #2196F3; overflow: hidden; background: white; }
+        .custom-marker img { width: 100%; height: 100%; object-fit: cover; }
+        .bottom-sheet { transition: transform 0.4s ease; transform: translateY(100%); z-index: 5000; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 30px 30px 0 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.1); }
+        .bottom-sheet.active { transform: translateY(0); }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #2196F3; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: none; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="logo">
-                <h1><i class="fas fa-handshake"></i> SkillConnect</h1>
-            </div>
-            <nav class="nav">
-                <a href="#home" class="nav-link active">Home</a>
-                <a href="#search" class="nav-link">Search</a>
-                <a href="#categories" class="nav-link">Categories</a>
-                <a href="#" class="nav-link" id="messagesLink">Messages</a>
-                <button class="btn btn-primary" id="loginBtn">Login</button>
-                <button class="btn btn-outline" id="signupBtn">Sign Up</button>
-                <div class="user-menu" id="userMenu" style="display: none;">
-                    <img src="" alt="" class="user-avatar" id="userAvatar">
-                    <span id="userName"></span>
-                    <button class="btn btn-sm" id="logoutBtn">Logout</button>
-                </div>
-            </nav>
-        </div>
-    </header>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="container">
-            <h2>Find Skilled Professionals Near You</h2>
-            <p>Connect with trusted photographers, designers, painters, developers, and more</p>
+    <!-- LOGIN SCREEN -->
+    <div id="authScreen" class="screen active bg-white p-8 flex flex-col justify-center">
+        <div class="mb-10 text-center">
+            <h1 class="text-4xl font-black text-[#2196F3]">SkillConnect</h1>
+            <p id="authSubtitle" class="text-gray-500 mt-2">अपना अकाउंट लॉगिन करें</p>
+        </div>
+        
+        <div class="space-y-4 max-w-md mx-auto w-full">
+            <input type="email" id="authEmail" placeholder="Email Address" class="w-full p-4 bg-gray-100 rounded-2xl outline-none border-2 border-transparent focus:border-blue-400">
+            <input type="password" id="authPass" placeholder="Password" class="w-full p-4 bg-gray-100 rounded-2xl outline-none border-2 border-transparent focus:border-blue-400">
             
-            <div class="search-box">
-                <div class="search-input-group">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search for photographer, painter, lawyer...">
-                </div>
-                <div class="location-input-group">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <input type="text" id="locationInput" placeholder="Enter city or location">
-                    <button class="btn-icon" id="useCurrentLocation" title="Use current location">
-                        <i class="fas fa-crosshairs"></i>
-                    </button>
-                </div>
-                <button class="btn btn-primary btn-large" id="searchBtn">Search</button>
-            </div>
+            <button id="authBtn" onclick="window.handleAuth()" class="w-full bg-[#2196F3] text-white py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                <span id="btnText">Login</span>
+                <div id="authLoader" class="loader"></div>
+            </button>
             
-            <div class="toggle-view">
-                <button class="btn-toggle active" id="mapViewBtn">
-                    <i class="fas fa-map"></i> Map
-                </button>
-                <button class="btn-toggle" id="listViewBtn">
-                    <i class="fas fa-list"></i> List
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Categories Section -->
-    <section class="categories" id="categories">
-        <div class="container">
-            <h2>Popular Categories</h2>
-            <div class="categories-grid" id="categoriesGrid">
-                <!-- Categories will be loaded dynamically -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Map View -->
-    <section class="map-section" id="mapSection" style="display: none;">
-        <div class="container-full">
-            <div id="map" style="height: 600px; width: 100%;"></div>
-        </div>
-    </section>
-
-    <!-- Results Section -->
-    <section class="results" id="resultsSection" style="display: none;">
-        <div class="container">
-            <div class="results-header">
-                <h2 id="resultsTitle">Search Results</h2>
-                <div class="filters">
-                    <select id="ratingFilter">
-                        <option value="0">All Ratings</option>
-                        <option value="4">4+ Stars</option>
-                        <option value="4.5">4.5+ Stars</option>
-                    </select>
-                    <select id="sortFilter">
-                        <option value="rating">Highest Rated</option>
-                        <option value="distance">Nearest</option>
-                        <option value="reviews">Most Reviewed</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="professionals-grid" id="professionalsGrid">
-                <!-- Results will be loaded dynamically -->
-            </div>
-            
-            <div class="pagination" id="pagination"></div>
-        </div>
-    </section>
-
-    <!-- Professional Profile Modal -->
-    <div class="modal" id="profileModal">
-        <div class="modal-content modal-large">
-            <span class="close">&times;</span>
-            <div id="profileContent">
-                <!-- Profile content will be loaded dynamically -->
-            </div>
+            <p class="text-center text-gray-500 mt-4">
+                <span id="toggleAuthText">अकाउंट नहीं है?</span> 
+                <button onclick="window.toggleAuthMode()" class="text-[#2196F3] font-bold ml-1">Signup</button>
+            </p>
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Login to SkillConnect</h2>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" required>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Login</button>
-            </form>
-            <p class="text-center">Don't have an account? <a href="#" id="showSignupModal">Sign up</a></p>
-        </div>
-    </div>
+    <!-- MAIN APP -->
+    <div id="mainApp" class="screen bg-gray-50">
+        <header class="bg-white px-4 py-3 shadow-sm border-b sticky top-0 z-[4000]">
+            <div class="flex items-center justify-between mb-3">
+                <h1 class="text-2xl font-bold text-[#2196F3]">SkillConnect</h1>
+                <div id="statusDot" class="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
+            </div>
+            <div id="searchBox" class="relative">
+                <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                <input type="text" placeholder="Search Professionals..." class="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-2xl text-sm outline-none">
+            </div>
+        </header>
 
-    <!-- Signup Modal -->
-    <div class="modal" id="signupModal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Create Account</h2>
-            <form id="signupForm">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="full_name" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="tel" name="phone" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" required minlength="6">
-                </div>
-                <div class="form-group">
-                    <label>I am a:</label>
-                    <select name="user_type" required>
-                        <option value="customer">Customer</option>
-                        <option value="professional">Professional</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
-            </form>
-            <p class="text-center">Already have an account? <a href="#" id="showLoginModal">Login</a></p>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 SkillConnect. All rights reserved.</p>
-            <div class="social-links">
-                <a href="#"><i class="fab fa-facebook"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
+        <div id="viewToggle" class="absolute top-[125px] left-0 right-0 flex justify-center z-[3000]">
+            <div class="bg-white/90 backdrop-blur-md p-1 rounded-full shadow-lg flex border">
+                <button id="mBtn" onclick="window.switchHomeView('map')" class="px-7 py-2 rounded-full bg-[#2196F3] text-white text-sm font-semibold">Map View</button>
+                <button id="lBtn" onclick="window.switchHomeView('list')" class="px-7 py-2 rounded-full text-gray-500 text-sm font-semibold">List View</button>
             </div>
         </div>
-    </footer>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
-    <script src="js/app.js"></script>
+        <main>
+            <div id="homeContent">
+                <div id="map"></div>
+                <div id="listView" class="hidden absolute inset-0 bg-gray-50 z-[2000] overflow-y-auto p-4 pb-40 mt-[130px]">
+                    <div id="proListContainer" class="space-y-4"></div>
+                </div>
+            </div>
+            <div id="chatContent" class="hidden p-10 text-center mt-20 text-gray-400">Chat Screen Coming Soon</div>
+            <div id="bookingContent" class="hidden p-10 text-center mt-20 text-gray-400">No Bookings Yet</div>
+            <div id="profileContent" class="hidden p-6 mt-4">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border mb-6 flex items-center gap-4">
+                    <div class="w-16 h-16 bg-[#2196F3] rounded-full flex items-center justify-center text-white text-2xl font-bold" id="userInitial">U</div>
+                    <div id="userEmailDisplay" class="font-bold text-gray-800">Email</div>
+                </div>
+                <button onclick="window.logout()" class="w-full bg-red-50 text-red-500 py-4 rounded-2xl font-bold">Logout</button>
+            </div>
+        </main>
+
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center h-20 z-[6000]">
+            <button onclick="window.showScreen('home', this)" class="nav-btn text-[#2196F3] flex flex-col items-center flex-1">
+                <i data-lucide="home"></i><span class="text-[10px] font-bold mt-1">Home</span>
+            </button>
+            <button onclick="window.showScreen('chat', this)" class="nav-btn text-gray-400 flex flex-col items-center flex-1">
+                <i data-lucide="message-square"></i><span class="text-[10px] font-bold mt-1">Chat</span>
+            </button>
+            <button onclick="window.showScreen('booking', this)" class="nav-btn text-gray-400 flex flex-col items-center flex-1">
+                <i data-lucide="calendar"></i><span class="text-[10px] font-bold mt-1">Booking</span>
+            </button>
+            <button onclick="window.showScreen('profile', this)" class="nav-btn text-gray-400 flex flex-col items-center flex-1">
+                <i data-lucide="user"></i><span class="text-[10px] font-bold mt-1">Profile</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- BOTTOM SHEET -->
+    <div id="profileSheet" class="bottom-sheet p-6 pb-12">
+        <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+        <div id="profileDetails"></div>
+        <button class="w-full bg-[#2196F3] text-white py-4 mt-6 rounded-2xl font-bold">Book Service Now</button>
+    </div>
+
+    <script>
+        // --- 1. CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqU0EAHYmiU5gzJqd6VkaNCafJ0pvaFTM",
+            authDomain: "skillconnect-ffca7.firebaseapp.com",
+            projectId: "skillconnect-ffca7",
+            storageBucket: "skillconnect-ffca7.firebasestorage.app",
+            messagingSenderId: "280895744591",
+            appId: "1:280895744591:web:20b25f57cd4b0ab909983a"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let isLogin = true;
+        let fetchedData = [];
+
+        // --- 2. AUTH FUNCTIONS (DEFINED ON WINDOW) ---
+        window.toggleAuthMode = function() {
+            isLogin = !isLogin;
+            document.getElementById('btnText').innerText = isLogin ? 'Login' : 'Signup';
+            document.getElementById('authSubtitle').innerText = isLogin ? 'अपना अकाउंट लॉगिन करें' : 'नया अकाउंट बनाएं';
+            document.getElementById('toggleAuthText').innerText = isLogin ? 'अकाउंट नहीं है?' : 'पहले से अकाउंट है?';
+        };
+
+        window.handleAuth = function() {
+            const email = document.getElementById('authEmail').value;
+            const pass = document.getElementById('authPass').value;
+            const loader = document.getElementById('authLoader');
+            const btnText = document.getElementById('btnText');
+
+            if(!email || !pass) return alert("Email/Pass missing");
+            
+            loader.style.display = "block";
+            btnText.style.display = "none";
+
+            const action = isLogin ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass);
+            
+            action.catch(err => {
+                alert(err.message);
+                loader.style.display = "none";
+                btnText.style.display = "block";
+            });
+        };
+
+        window.logout = function() { auth.signOut(); };
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('authScreen').classList.remove('active');
+                document.getElementById('mainApp').classList.add('active');
+                document.getElementById('userEmailDisplay').innerText = user.email;
+                document.getElementById('userInitial').innerText = user.email[0].toUpperCase();
+                startSync();
+            } else {
+                document.getElementById('authScreen').classList.add('active');
+                document.getElementById('mainApp').classList.remove('active');
+            }
+        });
+
+        // --- 3. APP LOGIC ---
+        const map = L.map('map', { zoomControl: false }).setView([19.0760, 72.8777], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        const markerGroup = L.layerGroup().addTo(map);
+
+        function startSync() {
+            db.collection("professionals").onSnapshot(snap => {
+                fetchedData = [];
+                snap.forEach(doc => fetchedData.push({id: doc.id, ...doc.data()}));
+                updateUI();
+            });
+        }
+
+        function updateUI() {
+            const list = document.getElementById('proListContainer');
+            list.innerHTML = ""; markerGroup.clearLayers();
+            fetchedData.forEach(p => {
+                const icon = L.divIcon({
+                    className: 'm-icon',
+                    html: `<div class="custom-marker" onclick="window.openSheet('${p.id}')"><img src="${p.img || 'https://i.pravatar.cc/150'}"></div>`,
+                    iconSize: [45, 45], iconAnchor: [22, 45]
+                });
+                L.marker([p.lat || 19.07, p.lng || 72.87], {icon}).addTo(markerGroup);
+                list.innerHTML += `<div class="bg-white p-4 rounded-3xl shadow-sm border flex gap-4" onclick="window.openSheet('${p.id}')"><img src="${p.img || 'https://i.pravatar.cc/150'}" class="w-16 h-16 rounded-2xl object-cover"><div><h3 class="font-bold">${p.name}</h3><p class="text-xs text-gray-500">${p.role}</p><p class="text-[#2196F3] font-bold mt-1">${p.price || 'Contact'}</p></div></div>`;
+            });
+            lucide.createIcons();
+        }
+
+        window.openSheet = function(id) {
+            const p = fetchedData.find(x => x.id === id);
+            document.getElementById('profileDetails').innerHTML = `<div class="flex items-center gap-4"><img src="${p.img}" class="w-20 h-20 rounded-full border-4 border-blue-50"><div><h2 class="text-2xl font-bold">${p.name}</h2><p class="text-gray-500">${p.role}</p></div></div>`;
+            document.getElementById('profileSheet').classList.add('active');
+            lucide.createIcons();
+        };
+
+        window.switchHomeView = function(v) {
+            const isMap = v === 'map';
+            document.getElementById('listView').classList.toggle('hidden', isMap);
+            document.getElementById('mBtn').className = isMap ? "px-7 py-2 rounded-full bg-[#2196F3] text-white text-sm font-semibold" : "px-7 py-2 rounded-full text-gray-500 text-sm font-semibold";
+            document.getElementById('lBtn').className = !isMap ? "px-7 py-2 rounded-full bg-[#2196F3] text-white text-sm font-semibold" : "px-7 py-2 rounded-full text-gray-500 text-sm font-semibold";
+        };
+
+        window.showScreen = function(s, btn) {
+            ['home', 'chat', 'booking', 'profile'].forEach(c => document.getElementById(c + 'Content').classList.add('hidden'));
+            document.getElementById('viewToggle').classList.add('hidden');
+            document.getElementById('searchBox').classList.add('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('text-[#2196F3]', 'text-gray-400'));
+            
+            if(s === 'home') {
+                document.getElementById('homeContent').classList.remove('hidden');
+                document.getElementById('viewToggle').classList.remove('hidden');
+                document.getElementById('searchBox').classList.remove('hidden');
+                setTimeout(() => map.invalidateSize(), 200);
+            } else {
+                document.getElementById(s + 'Content').classList.remove('hidden');
+            }
+            btn.classList.replace('text-gray-400', 'text-[#2196F3]');
+            lucide.createIcons();
+        };
+
+        window.onload = () => lucide.createIcons();
+        map.on('mousedown', () => document.getElementById('profileSheet').classList.remove('active'));
+    </script>
 </body>
 </html>
